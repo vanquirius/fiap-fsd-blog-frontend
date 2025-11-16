@@ -1,19 +1,34 @@
-import './globals.css';
-import { Navbar } from './components/navbar';
+import "./globals.css";
+import type { Metadata } from "next";
+import { Navbar } from "./components/navbar";
+import { AuthProvider } from "./context/AuthContext";
 
-export const metadata = {
-    title: 'Educational Blog',
+export const metadata: Metadata = {
+    title: "Educational Blog",
+    description: "A simple blog with posts and admin area",
 };
 
-export default function RootLayout({ children }) {
+export default function RootLayout({
+                                       children,
+                                   }: {
+    children: React.ReactNode;
+}) {
     return (
         <html lang="en">
-        <body className="bg-blue2 min-h-screen text-white">
-        <Navbar />
+        <body className="bg-gray-50 text-gray-900">
 
-        <main className="max-w-4xl mx-auto px-6 py-10">
-            {children}
-        </main>
+        <AuthProvider>
+
+            {/* Navbar fixed at top */}
+            <Navbar />
+
+            {/* Add padding so content does not hide under navbar */}
+            <main className="max-w-4xl mx-auto px-6 pt-24 pb-10">
+                {children}
+            </main>
+
+        </AuthProvider>
+
         </body>
         </html>
     );
