@@ -1,56 +1,56 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
-    const router = useRouter();
-    const { login, error, user, loading } = useAuth();
-    const [form, setForm] = useState({ username: "", password: "" });
+    const { login } = useAuth();
 
-    useEffect(() => {
-        if (!loading && user) router.push("/");
-    }, [user, loading, router]);
-
-    function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-        setForm({ ...form, [e.target.name]: e.target.value });
-    }
+    const [form, setForm] = useState({
+        username: "",
+        password: "",
+    });
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
-        await login(form.username, form.password);
+        try {
+            await login(form.username, form.password);
+            window.location.href = "/";
+        } catch (err: any) {
+            console.error(err);
+            alert(err?.response?.data?.message || "Login failed");
+        }
     }
 
     return (
-        <div className="flex justify-center pt-20 px-4">
-            <div className="bg-white shadow-lg rounded-xl p-8 w-full max-w-md">
-                <h1 className="text-2xl font-bold text-navy mb-6 text-center">Login</h1>
+        <div className="pt-24 flex justify-center">
+            <div className="bg-white p-10 rounded-xl shadow-xl w-full max-w-md">
+                <h1 className="text-3xl font-bold text-center mb-6">Login</h1>
 
-                <form onSubmit={handleSubmit} className="space-y-5">
+                <form onSubmit={handleSubmit} className="space-y-6">
                     <input
-                        name="username"
+                        type="text"
                         placeholder="Username"
                         value={form.username}
-                        onChange={handleChange}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-2"
-                    />
-                    <input
-                        type="password"
-                        name="password"
-                        placeholder="Password"
-                        value={form.password}
-                        onChange={handleChange}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                        onChange={(e) =>
+                            setForm({ ...form, username: e.target.value })
+                        }
+                        className="w-full px-4 py-3 rounded-lg bg-blue-50 focus:outline-none"
                     />
 
-                    {error && (
-                        <p className="text-red-600 text-sm text-center">{error}</p>
-                    )}
+                    <input
+                        type="password"
+                        placeholder="Password"
+                        value={form.password}
+                        onChange={(e) =>
+                            setForm({ ...form, password: e.target.value })
+                        }
+                        className="w-full px-4 py-3 rounded-lg bg-blue-50 focus:outline-none"
+                    />
 
                     <button
                         type="submit"
-                        className="w-full bg-blue2 text-white py-2 rounded-lg font-semibold hover:bg-navy transition"
+                        className="w-full bg-navy text-white py-3 rounded-lg hover:bg-blue-900"
                     >
                         Login
                     </button>

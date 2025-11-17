@@ -1,77 +1,96 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
+import { api, setApiToken } from "../../lib/api";
 
-interface AuthUser {
+interface User {
     username: string;
-    token: string;
 }
 
 interface AuthContextType {
-    user: AuthUser | null;
-    login: (username: string, password: string) => Promise<void>;
+    user: User | null;
+    login: (identifier: string, password: string) => Promise<void>;
     logout: () => void;
-    loading: boolean;
-    error: string | null;
 }
 
-const AuthContext = createContext<AuthContextType>({
-    user: null,
-    login: async () => {},
-    logout: () => {},
-    loading: true,
-    error: null,
-});
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-    const [user, setUser] = useState<AuthUser | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+    const [user, setUser] = useState<User | null>(null);
 
+    // Restore stored user on startup (only if it has a username)
     useEffect(() => {
-        const saved = localStorage.getItem("authUser");
-        if (saved) setUser(JSON.parse(saved));
-        setLoading(false);
+        try {
+            const stored = localStorage.getItem("user");
+            if (stored) {
+                const parsed = JSON.parse(stored);
+                if (parsed && parsed.username) {
+                    setUser(parsed);
+                } else {
+                    // if stored exists but is empty object, remove it to avoid confusion
+                    localStorage.removeItem("user");
+                }
+            }
+        } catch (err) {
+            localStorage.removeItem("user");
+        }
     }, []);
 
-    async function login(username: string, password: string) {
-        try {
-            setError(null);
+    /**
+     * Robust LOGIN:
+     * - identifier may be username OR email
+     * - try to extract username from several possible backend response shapes
+     * - fallback to identifier if backend doesn't return a username
+     */
+    const login = async (identifier: string, password: string) => {
+        const payload = { username: identifier, password }; // matches your backend/postman
+        const response = await api.post("/auth/login", payload);
 
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ username, password }),
-            });
+        // DEBUG: log raw response so you can inspect the exact shape in DevTools
+        console.log("AuthContext.login: raw response:", response?.data);
 
-            const data = await res.json();
+        // Try multiple possible locations for username:
+        const usernameFromTop = response?.data?.username;
+        const usernameFromUserObj = response?.data?.user?.username;
+        const maybeUserObj = response?.data?.user;
 
-            if (!res.ok) {
-                setError(data.error || "Invalid credentials");
-                return;
-            }
+        // Choose a username in priority order
+        const finalUsername =
+            usernameFromTop ||
+            usernameFromUserObj ||
+            (typeof maybeUserObj === "string" ? maybeUserObj : undefined) ||
+            identifier; // fallback to what user typed
 
-            const authUser = { username: data.username, token: data.token };
+        // Ensure we only store an object with a non-empty username
+        const loggedUser = { username: finalUsername };
 
-            localStorage.setItem("authUser", JSON.stringify(authUser));
-            setUser(authUser);
-        } catch {
-            setError("Server error");
-        }
-    }
+        console.log("AuthContext.login: resolved username ->", finalUsername);
 
-    function logout() {
-        localStorage.removeItem("authUser");
+        setUser(loggedUser);
+        localStorage.setItem("user", JSON.stringify(loggedUser));
+
+        // Token handling
+        const token = response?.data?.token ?? response?.data?.accessToken ?? null;
+        if (token) setApiToken(token);
+        else console.warn("AuthContext.login: no token found in response");
+    };
+
+    const logout = () => {
         setUser(null);
-    }
+        localStorage.removeItem("user");
+        setApiToken(null);
+        window.location.href = "/login";
+    };
 
     return (
-        <AuthContext.Provider value={{ user, login, logout, loading, error }}>
+        <AuthContext.Provider value={{ user, login, logout }}>
             {children}
         </AuthContext.Provider>
     );
-}
+};
 
-export function useAuth() {
-    return useContext(AuthContext);
-}
+export const useAuth = () => {
+    const ctx = useContext(AuthContext);
+    if (!ctx) throw new Error("useAuth must be used inside AuthProvider");
+    return ctx;
+};

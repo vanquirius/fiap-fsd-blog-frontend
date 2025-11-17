@@ -1,37 +1,27 @@
-// lib/api.ts
 import axios from "axios";
 
-const api = axios.create({
+export const api = axios.create({
     baseURL: process.env.NEXT_PUBLIC_API_URL,
+    headers: {
+        "Content-Type": "application/json",
+    },
 });
 
-// Attach JWT or SERVER_SECRET
-api.interceptors.request.use((config) => {
-    if (typeof window !== "undefined") {
-        const saved = localStorage.getItem("authUser");
-        const user = saved ? JSON.parse(saved) : null;
-
-        const token = user?.token;
-        const serverSecret = process.env.NEXT_PUBLIC_SERVER_SECRET;
-
-        const authToken = token || serverSecret;
-
-        if (authToken) {
-            config.headers.Authorization = `Bearer ${authToken}`;
-        }
+// Load token on startup
+if (typeof window !== "undefined") {
+    const token = localStorage.getItem("token");
+    if (token) {
+        api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
     }
-    return config;
-});
+}
 
-// Auto-logout on invalid token
-api.interceptors.response.use(
-    (res) => res,
-    (err) => {
-        if (err.response?.status === 401) {
-            localStorage.removeItem("authUser");
-        }
-        return Promise.reject(err);
+// Helper to update/remove token
+export function setApiToken(token: string | null) {
+    if (token) {
+        api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+        localStorage.setItem("token", token);
+    } else {
+        delete api.defaults.headers.common["Authorization"];
+        localStorage.removeItem("token");
     }
-);
-
-export { api };
+}

@@ -1,19 +1,33 @@
+// app/components/Protected.tsx
 "use client";
 
 import { useAuth } from "../context/AuthContext";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
-export default function Protected({ children }: { children: React.ReactNode }) {
-    const { user, loading } = useAuth();
+export default function ProtectedRoute({
+                                           children,
+                                       }: {
+    children: React.ReactNode;
+}) {
+    const { user } = useAuth();
     const router = useRouter();
+    const [checked, setChecked] = useState(false);
 
     useEffect(() => {
-        if (!loading && !user) router.push("/login");
-    }, [user, loading, router]);
+        // allow auth to restore from localStorage (small delay)
+        const t = setTimeout(() => setChecked(true), 120);
+        return () => clearTimeout(t);
+    }, []);
 
-    if (loading) return null;
-    if (!user) return null;
+    useEffect(() => {
+        if (checked && !user) {
+            router.push("/login");
+        }
+    }, [checked, user, router]);
+
+    // while waiting for restore, return null (or spinner)
+    if (!checked || !user) return null;
 
     return <>{children}</>;
 }
