@@ -30,7 +30,9 @@ jobs:
 
       # Build Next.js (static output or server output depending on config)
       - name: Build frontend
-        run: npm run build
+        run: |
+          echo "NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}" >> .env
+          npm run build
 
       # Configure AWS Credentials
       - name: Configure AWS credentials
