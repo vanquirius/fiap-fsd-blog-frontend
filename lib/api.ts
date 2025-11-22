@@ -1,27 +1,50 @@
+// lib/api.ts
 import axios from "axios";
 
-export const api = axios.create({
+// Create Axios instance
+const api = axios.create({
     baseURL: process.env.NEXT_PUBLIC_API_URL,
-    headers: {
-        "Content-Type": "application/json",
-    },
 });
 
-// Load token on startup
-if (typeof window !== "undefined") {
-    const token = localStorage.getItem("token");
-    if (token) {
-        api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-    }
-}
+// --- GLOBAL LOGOUT HANDLER ---
+let logoutHandler: (() => void) | null = null;
 
-// Helper to update/remove token
-export function setApiToken(token: string | null) {
-    if (token) {
-        api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-        localStorage.setItem("token", token);
-    } else {
-        delete api.defaults.headers.common["Authorization"];
-        localStorage.removeItem("token");
+/** AuthProvider registers its logout function here */
+export const setLogoutHandler = (fn: () => void) => {
+    logoutHandler = fn;
+};
+
+// --- REQUEST INTERCEPTOR ---
+api.interceptors.request.use((config) => {
+    const isCommentsRoute = config.url?.includes("/comments");
+
+    if (isCommentsRoute) {
+        config.headers.Authorization = `Bearer ${process.env.NEXT_PUBLIC_SERVER_SECRET}`;
+        return config;
     }
-}
+
+    if (config.method === "get") {
+        config.headers.Authorization = `Bearer ${process.env.NEXT_PUBLIC_SERVER_SECRET}`;
+    } else {
+        const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+    }
+
+    return config;
+});
+
+// --- RESPONSE INTERCEPTOR ---
+api.interceptors.response.use(
+    (res) => res,
+    (err) => {
+        // JWT expired or missing -> auto logout
+        if (err?.response?.status === 401) {
+            if (logoutHandler) logoutHandler();
+        }
+        return Promise.reject(err);
+    }
+);
+
+export default api;

@@ -1,7 +1,9 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
-import { api, setApiToken } from "../../lib/api";
+import React from "react";
+import { createContext, useContext, useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import api, { setLogoutHandler } from "../../lib/api";
 
 interface User {
     username: string;
@@ -9,77 +11,86 @@ interface User {
 
 interface AuthContextType {
     user: User | null;
-    login: (identifier: string, password: string) => Promise<void>;
+    login: (identifier: string, password: string) => Promise<string | null>;
     logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+    const router = useRouter();
     const [user, setUser] = useState<User | null>(null);
 
-    // Restore stored user on startup (only if it has a username)
+    // Load user from localStorage (persistent login)
     useEffect(() => {
         try {
             const stored = localStorage.getItem("user");
             if (stored) {
                 const parsed = JSON.parse(stored);
-                if (parsed && parsed.username) {
-                    setUser(parsed);
-                } else {
-                    // if stored exists but is empty object, remove it to avoid confusion
-                    localStorage.removeItem("user");
-                }
+                if (parsed?.username) setUser(parsed);
             }
-        } catch (err) {
+        } catch {
             localStorage.removeItem("user");
         }
     }, []);
 
-    /**
-     * Robust LOGIN:
-     * - identifier may be username OR email
-     * - try to extract username from several possible backend response shapes
-     * - fallback to identifier if backend doesn't return a username
-     */
-    const login = async (identifier: string, password: string) => {
-        const payload = { username: identifier, password }; // matches your backend/postman
-        const response = await api.post("/auth/login", payload);
-
-        // DEBUG: log raw response so you can inspect the exact shape in DevTools
-        console.log("AuthContext.login: raw response:", response?.data);
-
-        // Try multiple possible locations for username:
-        const usernameFromTop = response?.data?.username;
-        const usernameFromUserObj = response?.data?.user?.username;
-        const maybeUserObj = response?.data?.user;
-
-        // Choose a username in priority order
-        const finalUsername =
-            usernameFromTop ||
-            usernameFromUserObj ||
-            (typeof maybeUserObj === "string" ? maybeUserObj : undefined) ||
-            identifier; // fallback to what user typed
-
-        // Ensure we only store an object with a non-empty username
-        const loggedUser = { username: finalUsername };
-
-        console.log("AuthContext.login: resolved username ->", finalUsername);
-
-        setUser(loggedUser);
-        localStorage.setItem("user", JSON.stringify(loggedUser));
-
-        // Token handling
-        const token = response?.data?.token ?? response?.data?.accessToken ?? null;
-        if (token) setApiToken(token);
-        else console.warn("AuthContext.login: no token found in response");
-    };
-
+    // --- MANUAL LOGOUT (logout button) ---
     const logout = () => {
         setUser(null);
         localStorage.removeItem("user");
-        setApiToken(null);
-        window.location.href = "/login";
+        localStorage.removeItem("token");
+        delete api.defaults.headers.common["Authorization"];
+
+        router.push("/"); // user logout → home page
+    };
+
+    // --- SESSION EXPIRED LOGOUT (401 handler) ---
+    const sessionLogout = () => {
+        setUser(null);
+        localStorage.removeItem("user");
+        localStorage.removeItem("token");
+        delete api.defaults.headers.common["Authorization"];
+
+        router.push("/login"); // expired token → login page
+    };
+
+    // Register the 401 logout handler globally
+    useEffect(() => {
+        setLogoutHandler(() => sessionLogout);
+    }, [sessionLogout]);
+
+    // --- LOGIN ---
+    const login = async (identifier: string, password: string) => {
+        try {
+            const payload = { username: identifier, password };
+            const response = await api.post("/auth/login", payload);
+
+            const username =
+                response?.data?.username ||
+                response?.data?.user?.username ||
+                identifier;
+
+            const loggedUser = { username };
+            setUser(loggedUser);
+            localStorage.setItem("user", JSON.stringify(loggedUser));
+
+            // Store the token
+            const token =
+                response?.data?.token ||
+                response?.data?.accessToken ||
+                null;
+
+            if (token) localStorage.setItem("token", token);
+
+            return null; // success = no error
+        } catch (err: any) {
+            const msg =
+                err?.response?.data?.message ||
+                err?.response?.data?.error ||
+                "Invalid username or password";
+
+            return msg;
+        }
     };
 
     return (

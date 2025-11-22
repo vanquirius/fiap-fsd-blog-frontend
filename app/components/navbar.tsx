@@ -1,9 +1,10 @@
+
 "use client";
 
 import Link from "next/link";
 import { useAuth } from "../context/AuthContext";
 
-export function Navbar() {
+export default function Navbar() {
     const { user, logout, loading } = useAuth();
 
     if (loading) return null;

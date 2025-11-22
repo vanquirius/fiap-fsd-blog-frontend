@@ -1,56 +1,65 @@
 "use client";
 
+import React from "react";
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
     const { login } = useAuth();
+    const router = useRouter();
 
-    const [form, setForm] = useState({
-        username: "",
-        password: "",
-    });
+    const [identifier, setIdentifier] = useState("");
+    const [password, setPassword] = useState("");
+    const [errorMessage, setErrorMessage] = useState("");
 
-    async function handleSubmit(e: React.FormEvent) {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        try {
-            await login(form.username, form.password);
-            window.location.href = "/";
-        } catch (err: any) {
-            console.error(err);
-            alert(err?.response?.data?.message || "Login failed");
+        setErrorMessage("");
+
+        // Expect login to return an error message string on failure, or falsy on success.
+        const err = await login(identifier, password);
+
+        if (err) {
+            setErrorMessage(err); // show error on screen
+            return;
         }
-    }
+
+        router.push("/");
+    };
 
     return (
-        <div className="pt-24 flex justify-center">
-            <div className="bg-white p-10 rounded-xl shadow-xl w-full max-w-md">
-                <h1 className="text-3xl font-bold text-center mb-6">Login</h1>
+        // NOTE: changed items-center -> items-start and increased top padding.
+        // This keeps the box horizontally centered but closer to the navbar.
+        <div className="flex justify-center items-start min-h-screen bg-navy pt-20">
+            <div className="bg-white p-8 rounded-lg shadow-lg w-96">
+                <h2 className="text-center text-xl font-semibold mb-4">Login</h2>
 
-                <form onSubmit={handleSubmit} className="space-y-6">
+                {errorMessage && (
+                    <p className="text-red-600 text-center mb-3">
+                        {errorMessage}
+                    </p>
+                )}
+
+                <form onSubmit={handleSubmit} className="space-y-4">
                     <input
                         type="text"
-                        placeholder="Username"
-                        value={form.username}
-                        onChange={(e) =>
-                            setForm({ ...form, username: e.target.value })
-                        }
-                        className="w-full px-4 py-3 rounded-lg bg-blue-50 focus:outline-none"
+                        placeholder="Username or email"
+                        className="w-full p-2 border rounded bg-gray-100"
+                        value={identifier}
+                        onChange={(e) => setIdentifier(e.target.value)}
                     />
-
                     <input
                         type="password"
                         placeholder="Password"
-                        value={form.password}
-                        onChange={(e) =>
-                            setForm({ ...form, password: e.target.value })
-                        }
-                        className="w-full px-4 py-3 rounded-lg bg-blue-50 focus:outline-none"
+                        className="w-full p-2 border rounded bg-gray-100"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
                     />
 
                     <button
                         type="submit"
-                        className="w-full bg-navy text-white py-3 rounded-lg hover:bg-blue-900"
+                        className="w-full bg-blue2 text-white py-2 rounded hover:bg-navy transition"
                     >
                         Login
                     </button>
