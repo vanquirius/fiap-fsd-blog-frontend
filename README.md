@@ -1,36 +1,37 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+📚 Projeto Tech Challenge – Atividade 32 (FIAP Pós-Tech Full Stack Dev)
 
-## Getting Started
+**Autor:** Marcelo
+**Data:** Nov/2025
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 📌 Problema de Negócio
+Na fase 1, foi criada uma plataforma de blog educacional utilizando **OutSystems** (ferramenta no-code).  
+Devido ao sucesso da plataforma, na fase 2 surgiu a necessidade de **refatorar o back-end** para suportar **uma nova escala** e possibilitar maior flexibilidade no desenvolvimento.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Esta fase 3 criará o front-end arquitetura baseada em **React.js**, com suporte a conteinerização e deploy na AWS.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+🚀 Funcionalidades
+📄 Exibição da lista de posts
+🔍 Busca por posts
+📝 Criação de posts (requer autenticação)
+✏️ Edição e exclusão de posts (requer autenticação)
+💬 Comentários por post
+🔐 Login e registro de usuários
+🌐 Comunicação com API REST em Node.js + MongoDB
 
-## Learn More
+🛠️ Tecnologias Utilizadas
 
-To learn more about Next.js, take a look at the following resources:
+- **Next.js (App Router)**
+- **React**
+- **TypeScript**
+- **Axios**
+- **Jest (testes unitários)**
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Ferramentas auxiliares:
+- **Microsoft Word** – documentação textual e explicações técnicas
+- **OBS Studio** – gravação e apresentação final da aplicação
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Repositório no GitHub: [fiap-fsd-blog-frontend](https://github.com/vanquirius/fiap-fsd-blog-frontend)
