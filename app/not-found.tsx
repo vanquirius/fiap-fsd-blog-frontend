@@ -1,3 +1,6 @@
+"use client";
+import React from "react";
+
 export default function NotFound() {
     return (
         <div className="min-h-[70vh] flex flex-col items-center justify-center text-white">
