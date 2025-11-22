@@ -1,4 +1,4 @@
-📚 Projeto Tech Challenge – Atividade 32 (FIAP Pós-Tech Full Stack Dev)
+## 📚 Projeto Tech Challenge – Atividade 32 (FIAP Pós-Tech Full Stack Dev)
 
 **Autor:** Marcelo
 **Data:** Nov/2025
