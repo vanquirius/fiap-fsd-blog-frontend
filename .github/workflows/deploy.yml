@@ -52,9 +52,3 @@ jobs:
         run: |
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-
-      - name: Deploy to App Runner
-        run: |
-          aws apprunner update-service \
-            --service-arn "${{ secrets.FRONTEND_APP_RUNNER_SERVICE_ARN }}" \
-            --source-configuration "ImageRepository={ImageIdentifier='${{ steps.login-ecr.outputs.registry }}/blog-frontend:latest',ImageRepositoryType='ECR'}"

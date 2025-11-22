@@ -13,6 +13,7 @@ interface AuthContextType {
     user: User | null;
     login: (identifier: string, password: string) => Promise<string | null>;
     logout: () => void;
+    loading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -20,6 +21,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const router = useRouter();
     const [user, setUser] = useState<User | null>(null);
+    const [loading, setLoading] = useState(true);
 
     // Load user from localStorage (persistent login)
     useEffect(() => {
@@ -32,6 +34,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         } catch {
             localStorage.removeItem("user");
         }
+
+        setLoading(false);
     }, []);
 
     // --- MANUAL LOGOUT (logout button) ---
@@ -40,8 +44,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         localStorage.removeItem("user");
         localStorage.removeItem("token");
         delete api.defaults.headers.common["Authorization"];
-
-        router.push("/"); // user logout → home page
+        router.push("/");
     };
 
     // --- SESSION EXPIRED LOGOUT (401 handler) ---
@@ -50,11 +53,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         localStorage.removeItem("user");
         localStorage.removeItem("token");
         delete api.defaults.headers.common["Authorization"];
-
-        router.push("/login"); // expired token → login page
+        router.push("/login");
     };
 
-    // Register the 401 logout handler globally
     useEffect(() => {
         setLogoutHandler(() => sessionLogout);
     }, [sessionLogout]);
@@ -74,7 +75,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             setUser(loggedUser);
             localStorage.setItem("user", JSON.stringify(loggedUser));
 
-            // Store the token
             const token =
                 response?.data?.token ||
                 response?.data?.accessToken ||
@@ -82,7 +82,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
             if (token) localStorage.setItem("token", token);
 
-            return null; // success = no error
+            return null;
         } catch (err: any) {
             const msg =
                 err?.response?.data?.message ||
@@ -94,7 +94,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, logout }}>
+        <AuthContext.Provider value={{ user, login, logout, loading }}>
             {children}
         </AuthContext.Provider>
     );
