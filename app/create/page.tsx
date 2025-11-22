@@ -2,8 +2,8 @@
 import React from "react";
 import { useState } from "react";
 import api from "../../lib/api";
-import { useAuth } from "../../app/context/AuthContext";
-import ProtectedRoute from "../components/Protected";
+import ProtectedRoute from "@/app/components/Protected";
+import { useAuth } from "@/app/context/AuthContext";
 
 export default function CreatePostPage() {
     const { user } = useAuth();

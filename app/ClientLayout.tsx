@@ -1,8 +1,8 @@
 "use client";
 
 import React from "react";
-import Navbar from "./components/navbar";
-import { AuthProvider } from "./context/AuthContext";
+import Navbar from "@/app/components/navbar";
+import { AuthProvider } from "@/app/context/AuthContext";
 
 export default function ClientLayout({
                                          children,
